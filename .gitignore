@@ -1,0 +1,49 @@
+node_modules/
+.pnp/
+.pnp.js
+# Yarn Integrity file
+.yarn-integrity
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directories
+coverage
+.nyc_output
+
+# Build outputs
+dist/
+build/
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.*
+
+# Lock files (optional, uncomment if you do not wish to commit)
+# package-lock.json
+# yarn.lock
+pnpm-lock.yaml
+
