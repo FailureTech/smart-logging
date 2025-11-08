@@ -1,8 +1,8 @@
 # smart-logging
 
-Zero-setup console interception for Node.js. Install it, import it once at startup, and every `console.log`, `console.error`, etc. automatically routes through [Pino](https://github.com/pinojs/pino) with pretty output, timestamps, and file/line metadata. No manual logger wiring required.
+**Import it once. All your `console.*` logs become async-aware, pretty Pino logs with timestamps and file names—no other changes needed.**
 
-Optional tag helpers (`addTag`, `clearTags`) let you stamp logs with request IDs or any metadata you need.
+Ideal when you just want to install a logger and let it handle every `console.log` in the project automatically.
 
 ## Install
 
@@ -14,70 +14,96 @@ yarn add smart-logging
 pnpm add smart-logging
 ```
 
-## Usage
+## Why smart-logging?
 
-### ESM
+| Before (plain `console.log`)                                  | After (`smart-logging`)                                                                 |
+|---------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| Synchronous console writes can block during heavy logging     | Console calls are deferred, keeping the event loop responsive                          |
+| No timestamp, file, or line information                       | Every message includes ISO timestamp plus the originating file and line                |
+| Hard to trace errors—stack traces get lost in noisy output    | Pretty Pino formatting preserves stacks and structures them cleanly                    |
+| Integrating a logger means rewriting every `console.*` call   | Import once; all existing `console.*` calls are patched automatically                  |
+| Adding request/user metadata requires manual plumbing         | `addTag` lets you annotate logs with any key/value scope (requestId, userId, etc.)     |
+| Existing projects without logging need major refactors        | Drop in the package, import it in the root file, and you’re done                       |
+
+## 1. Enable automatic logging
+
+Do this **once** in the entry file of your app (the place where everything starts). After this, every file can keep using plain `console.log`, `console.error`, etc.—they are all patched automatically.
+
+### ESM entry (e.g. `index.mjs`, `app.js` in `"type": "module"`)
 
 ```javascript
 import 'smart-logging';
-// Optional helpers
-import { addTag, clearTags } from 'smart-logging';
 
-addTag({ requestId: 'req-123' });
-console.log('This will include the requestId, timestamp, and file info');
-clearTags();
+console.log('Server booting');   // timestamp + file:line
+console.error(new Error('Oops')); // pretty stack trace
 ```
 
-### CommonJS
+Output:
+
+```
+2025-11-08 19:03:12.345  src/server.js:4 - Server booting
+2025-11-08 19:03:12.352  src/server.js:5 - Oops
+    Error: Oops
+        at ...
+```
+
+### CommonJS entry (e.g. `index.js` without `"type": "module"`)
 
 ```javascript
 require('smart-logging');
-const { addTag, clearTags } = require('smart-logging');
 
-addTag({ userId: 'user-42' });
-console.error(new Error('Oops!'));
-clearTags();
+console.info('Ready to roll');
+console.warn('Using CommonJS');
 ```
 
-That single import is all you need—every built-in console method is monkey-patched once so your app logs are structured and pretty everywhere.
+Output:
 
-## Features
+```
+2025-11-08 19:05:01.410  src/index.js:4 - Ready to roll
+2025-11-08 19:05:01.411  src/index.js:5 - Using CommonJS
+```
 
-- Automatic console interception (`log`, `info`, `warn`, `error`, `debug`)
-- Pretty printed output (via `pino-pretty`) with timestamps and file:line
-- Async context support using `AsyncLocalStorage`
-- `addTag(metadata)` to attach request IDs, user IDs, feature flags, etc.
-- `clearTags()` to reset metadata when a request ends
-- Works with both ESM `import` and CommonJS `require`
+> Format: `[time]  file:line - message`
 
-## Tags / Metadata
+That’s it. No manual logger instances, no extra function calls. Any module that uses `console` automatically inherits the new behaviour.
 
-Use `addTag` to merge metadata into the current async context. Values must be strings, numbers, booleans, or `null`; anything else throws.
+## 2. Optional tags (request IDs, users, feature flags…)
+
+If you want to attach metadata to every log within a request, call `addTag`. You can use any key name (`requestId`, `userId`, `featureFlag`, `ip`, etc.). Values must be strings, numbers, booleans, or `null`—functions, objects, or arrays are rejected to keep logs safe and predictable.
 
 ```javascript
-addTag({ requestId: 'req-9000', plan: 'enterprise' });
-console.info('Handling billing webhook');
+import 'smart-logging';
+import { addTag, clearTags } from 'smart-logging';
 
-addTag({ featureFlag: 'beta-mode' }); // merges into existing tags
-console.warn('Customer enabled beta mode');
+addTag({ requestId: 'req-123', userId: 'user-99' });
+console.log('Started processing');
 
-clearTags(); // resets the context for the next request
+addTag({ featureFlag: 'beta-payments' }); // merges with existing tags
+console.warn('Customer in beta flow');
+
+clearTags(); // reset when the request finishes
 ```
 
-Tags are appended to each log line as `key: value`, making it easy to grep or pipe into log aggregators.
+Logs emitted inside that async call chain will include `requestId`, `userId`, and `featureFlag` automatically:
 
-## Error Handling
+```
+2025-11-08 19:03:45.112  requestId: req-123 userId: user-99 featureFlag: beta-payments  api/orders.js:27 - Customer in beta flow
+```
 
-Unhandled errors retain their stack trace and are sent through Pino with context attached. The package also registers listeners for:
+## What smart-logging does for you
 
-- `uncaughtException`
-- `unhandledRejection`
-- `SIGINT` (Ctrl+C)
-- `process exit`
+- 🪄 Monkey-patches `console.log`, `info`, `warn`, `error`, and `debug`
+- 🕒 Adds ISO timestamps and prettified output via `pino-pretty`
+- 📁 Prints the relative file name and line number that produced the log
+- 🧵 Uses `AsyncLocalStorage` to carry tags across async boundaries
+- 🚨 Hooks `uncaughtException`, `unhandledRejection`, `SIGINT`, and process exit to log cleanly
+- 🧰 Works in both ESM and CommonJS projects out of the box
 
-## Contributing
+## Troubleshooting
 
-PRs and issues are welcome! If you’d like to extend the logger or add integrations, open a discussion first so we can align on direction.
+- **Publishing:** bump the version before each `npm publish`.  
+- **Tags not showing:** ensure `addTag` runs before the first log in the async path.  
+- **Want custom formatting?** Fork and tweak `support/core/logger-core.cjs`.
 
 ## License
 
