@@ -1,7 +1,7 @@
 {
   "name": "smart-logging",
-  "version": "1.0.2",
-  "description": "",
+  "version": "1.0.3",
+  "description": "A lightweight and flexible logging utility built with Pino, supporting both CommonJS and ES Modules.",
   "main": "./index.cjs",
   "type": "module",
   "module": "./index.js",
@@ -15,9 +15,24 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "logger",
+    "logging",
+    "pino",
+    "nodejs",
+    "esm",
+    "cjs"
+  ],
+  "author": "FailureTech <failurecoder.india@gmail.com> (https://github.com/FailureTech)",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FailureTech/smart-logging.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FailureTech/smart-logging/issues"
+  },
+  "homepage": "https://github.com/FailureTech/smart-logging#readme",
   "packageManager": "pnpm@10.18.3",
   "dependencies": {
     "pino": "^10.1.0",
